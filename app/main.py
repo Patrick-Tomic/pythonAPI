@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app import crud, schemas, npm, neon_api
+from app import crud, schemas, npm, neon_api, google_docs
 
 
 @asynccontextmanager
@@ -15,6 +17,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Neon CRUD Starter", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Starlette's default error handling bypasses CORSMiddleware for unhandled
+# exceptions (e.g. a DB connection failure), which makes them show up in the
+# browser as an opaque CORS error instead of a real 500. Registering a
+# handler routes the response back through CORSMiddleware so the frontend
+# gets a proper error body it can display.
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 @app.get("/health")
@@ -65,6 +84,12 @@ async def delete_application(application_id: int, db: AsyncSession = Depends(get
     deleted = await crud.delete_application(db, application_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Application not found")
+
+
+@app.post("/applications/export/google-doc")
+async def export_applications_to_google_doc(db: AsyncSession = Depends(get_db)):
+    applications = await crud.get_applications(db, skip=0, limit=1000)
+    return google_docs.export_applications_to_doc(applications)
 
 
 # ---- Neon management API: Databases ----

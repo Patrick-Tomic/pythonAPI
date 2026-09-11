@@ -10,6 +10,7 @@ class ApplicationBase(BaseModel):
     emailed: bool | None = False
     response: bool | None = False
     followup: date | None = None
+    date_applied: date | None = None
 
 
 class ApplicationCreate(ApplicationBase):
@@ -24,6 +25,7 @@ class ApplicationUpdate(BaseModel):
     emailed: bool | None = None
     response: bool | None = None
     followup: date | None = None
+    date_applied: date | None = None
 
 
 class ApplicationOut(ApplicationBase):

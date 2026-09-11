@@ -15,3 +15,4 @@ class Application(Base):
     emailed: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
     response: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
     followup: Mapped[date | None] = mapped_column(Date, nullable=True)
+    date_applied: Mapped[date | None] = mapped_column(Date, nullable=True)
